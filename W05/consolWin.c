@@ -1,5 +1,15 @@
-#include <windows.h>
+ï»¿#include <windows.h>
 #include <stdio.h>
+
+typedef struct
+{
+    int x;
+    int y;
+    int width;
+    int height;
+    char name[30];
+    int bgColor;
+} drawWindow;
 
 void gotoxy(int x, int y)
 {
@@ -10,50 +20,68 @@ void gotoxy(int x, int y)
     SetConsoleCursorPosition(output, Cur);
 }
 
-void DrawWindow(int width, int height)
+void DrawWindow(drawWindow win)
 {
-    int x = 0; // ½ÃÀÛ xÁÂÇ¥ (°¡·Î)
-    int y = 0;  // ½ÃÀÛ yÁÂÇ¥ (¼¼·Î)
+    printf("\033[%dm", win.bgColor);
+    // ìœ—ë³€
+    gotoxy(win.x, win.y);
+    printf("â”Œ");
+    for (int i = 0; i < win.width - 2; i++) printf("â”€");
+    printf("â”");
 
-    // À­º¯
-    gotoxy(x, y);
-    printf("¦£");
-    for (int i = 0; i < width - 2; i++) printf("¦¡");
-    printf("¦¤");
-
-    // ¼¼·Î ÁÙ
-    for (int i = 1; i < height - 1; i++) {
-        gotoxy(x, y + i);
-        printf("¦¢");
-        for (int j = 0; j < width - 2; j++) printf(" ");
-        printf("¦¢");
+    // ì„¸ë¡œ ì¤„
+    for (int i = 1; i < win.height - 1; i++) {
+        gotoxy(win.x, win.y + i);
+        printf("â”‚");
+        for (int j = 0; j < win.width - 2; j++) printf(" ");
+        printf("â”‚");
     }
 
-    // ¾Æ·§º¯
-    gotoxy(x, y + height - 1);
-    printf("¦¦");
-    for (int i = 0; i < width - 2; i++) printf("¦¡");
-    printf("¦¥");
+    // ì•„ëž«ë³€
+    gotoxy(win.x, win.y + win.height - 1);
+    printf("â””");
+    for (int i = 0; i < win.width - 2; i++) printf("â”€");
+    printf("â”˜");
 
-    // Á¦¸ñ ³Ö±â
-    gotoxy(x + 2, y + 1);  // À­ÁÙ ¾ÈÂÊ¿¡ ÅØ½ºÆ®
-    printf("³¢¾ß¾Ç");
+    // ì œëª© ë„£ê¸°
+    gotoxy(win.x + 2, win.y + 1);  // ìœ—ì¤„ ì•ˆìª½ì— í…ìŠ¤íŠ¸
+    printf("%s", win.name);
 
-    //ÁÖ¼ÒÃ¢ ÁÙ
-    gotoxy(x, y + 2);  // À­ÁÙ ¾ÈÂÊ¿¡ ÅØ½ºÆ®
-    printf("¦§");
-    for (int i = 0; i < width - 2; i++) printf("¦¡");
-    printf("¦©");
+    //ì£¼ì†Œì°½ ì¤„
+    gotoxy(win.x, win.y + 2);  // ìœ—ì¤„ ì•ˆìª½ì— í…ìŠ¤íŠ¸
+    printf("â”œ");
+    for (int i = 0; i < win.width - 2; i++) printf("â”€");
+    printf("â”¤");
 
-    //µð¹ö±× ¸Þ½ÃÁö ¾Æ·¡·Î ³»¸®±â
+    printf("\033[0m");
+
+    //ë””ë²„ê·¸ ë©”ì‹œì§€ ì•„ëž˜ë¡œ ë‚´ë¦¬ê¸°
     for (int i = 0; i < 9; i++) puts("");
 }
 
-
-//4 °¡·Î 2
-
 int main()
 {
-    DrawWindow(30, 10);  // °¡·Î 30Ä­, ¼¼·Î 10ÁÙÂ¥¸® Ã¢ »ý¼º
+    for (int i = 0; i < 45; i++)
+    {
+        for (int j = 0; j < 40; j++) 
+        {
+            printf("\033[42m \033[0m");
+        }
+    }
+
+    drawWindow win1 = { 10, 3, 20, 7, "1ë²ˆì°½", 44 };
+    drawWindow win2 = { 15, 5, 20, 7, "2ë²ˆì°½", 41 };
+
+    DrawWindow(win1);
+    DrawWindow(win2);
+
     return 0;
 }
+
+
+
+// ë°”íƒ•í™”ë©´ì— í•´ë‹¹í•˜ëŠ” ì˜ì—­ë§Œì„ ë…¹ìƒ‰ìœ¼ë¡œ ê°€ë“ ì±„ìš¸ ê²ƒ(ê³µë°± x) -------------------
+// ë°”íƒ•í™”ë©´ ìœ„ì— ë§Œë“  ìœˆë„ìš° ì°½ì„ 20*7í¬ê¸°ë¡œ 10.3ì— ì°ì„ ê²ƒ ------------------
+// ìœˆë„ìš°ì˜ ê¸°ë³¸ í¬ê¸°, ê¸°ë³¸ ìœ„ì¹˜, ì´ë¦„ ì†ì„±ì„ struct í˜•íƒœë¡œ ê´€ë¦¬í•  ê²ƒ ------------------
+// ë‹¤ë¥¸ ìƒ‰ìƒìœ¼ë¡œ 15.5ì— ë™ì¼í•œ ìœˆë„ìš°ë¥¼ ì¶œë ¥í•  ê²ƒ --------------------------
+// ê¹ƒì— ì—…ë¡œë“œí•˜ê³  ì œì¶œ
