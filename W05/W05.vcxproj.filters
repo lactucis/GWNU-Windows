@@ -18,5 +18,11 @@
     <ClCompile Include="consolWin.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="6week.c">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="6week_2.c">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
