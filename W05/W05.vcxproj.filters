@@ -24,5 +24,14 @@
     <ClCompile Include="6week_2.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="6_3.c">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="6_4.c">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="6_5.c">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

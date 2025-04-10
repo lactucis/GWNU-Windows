@@ -26,7 +26,7 @@ int main() {
     printf("\033[44mP\033[0m");
 
     while (1) {
-        char ch = getch();
+        //char ch = getch();
 
         gotoxy(x, y);
         printf("\033[44m \033[0m");
