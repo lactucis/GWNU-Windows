@@ -1,9 +1,7 @@
 ﻿#include <windows.h>
 #include <stdio.h>
 
-#define WIN_COUNT 3
-
-// ───── 구조체 정의 ─────
+// ────────── 구조체 정의 ──────────
 typedef struct {
     int x, y, width, height;
     const char* title;
@@ -11,7 +9,7 @@ typedef struct {
     int visible;
 } MyWindow;
 
-// ───── 콘솔 도우미 함수 ─────
+// ────────── 콘솔 도우미 함수들 ──────────
 void gotoxy(int x, int y) {
     COORD pos = { x, y };
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
@@ -22,7 +20,7 @@ void setCursorInvisible() {
     SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &ci);
 }
 
-// ───── 배경 그리기 ─────
+// ────────── 배경 그리기 ──────────
 void DrawBG(int width, int height) {
     int topMargin = 1, bottomMargin = 1, sideMargin = 2;
     int taskbarY = height - bottomMargin - 1;
@@ -45,7 +43,7 @@ void DrawBG(int width, int height) {
     }
 }
 
-// ───── 윈도우 그리기 ─────
+// ────────── 윈도우 그리기 ──────────
 void drawConsoleWindow(int startX, int startY, int width, int height, const char* title, int color) {
     gotoxy(startX, startY);
     printf("\033[4%dm|", color);
@@ -71,23 +69,24 @@ void drawConsoleWindow(int startX, int startY, int width, int height, const char
     printf("\033[41m\033[37mX\033[0m");
 }
 
-// ───── 커서 그리기 ─────
+// ────────── 커서 애니메이션 ──────────
 void drawCursor(int x, int y, int frame) {
     const char* cursorFrames[] = { "<", ">" };
     gotoxy(x, y);
     printf("\033[32m%s\033[0m", cursorFrames[frame % 2]);
 }
 
-// ───── 메인 ─────
+// ────────── 메인 함수 ──────────
 int main() {
+    setCursorInvisible();
     POINT mousePos;
     int frame = 0;
-    setCursorInvisible();
+    const int windowCount = 3;
 
-    MyWindow windows[WIN_COUNT] = {
-        {10, 2, 40, 10, "첫 번째 창", 3, 1},
-        {20, 5, 30, 8,  "두 번째 창", 2, 1},
-        {30, 8, 35, 9,  "세 번째 창", 5, 1}
+    MyWindow windows[3] = {
+        {10, 2, 40, 10, "첫 번째 창", 3, 1},   // 노랑
+        {20, 5, 30, 8,  "두 번째 창", 2, 1},   // 초록
+        {30, 8, 35, 9,  "세 번째 창", 5, 1}    // 자주
     };
 
     while (1) {
@@ -105,8 +104,8 @@ int main() {
         system("cls");
         DrawBG(80, 25);
 
-        // X 버튼 클릭 검사 및 창 닫기
-        for (int i = WIN_COUNT - 1; i >= 0; i--) {
+        // X 버튼 클릭 처리
+        for (int i = windowCount - 1; i >= 0; i--) {
             if (!windows[i].visible) continue;
             int xBtnX = windows[i].x + windows[i].width - 4;
             int xBtnY = windows[i].y + 1;
@@ -117,24 +116,24 @@ int main() {
             }
         }
 
-        // 클릭한 창을 최상단으로 정렬
-        for (int i = WIN_COUNT - 1; i >= 0; i--) {
+        // 클릭한 창을 최상단으로 이동
+        for (int i = windowCount - 1; i >= 0; i--) {
             if (!windows[i].visible) continue;
             if (mouseX >= windows[i].x && mouseX < windows[i].x + windows[i].width &&
                 mouseY >= windows[i].y && mouseY < windows[i].y + windows[i].height) {
                 if (GetAsyncKeyState(VK_LBUTTON) & 0x8000) {
-                    MyWindow clicked = windows[i];
-                    for (int j = i; j < WIN_COUNT - 1; j++) {
+                    MyWindow temp = windows[i];
+                    for (int j = i; j < windowCount - 1; j++) {
                         windows[j] = windows[j + 1];
                     }
-                    windows[WIN_COUNT - 1] = clicked;
+                    windows[windowCount - 1] = temp;
                     break;
                 }
             }
         }
 
-        // 윈도우 출력 (순서대로 → 최상단)
-        for (int i = 0; i < WIN_COUNT; i++) {
+        // 윈도우 출력 (순서대로 → 가장 위 창이 마지막)
+        for (int i = 0; i < windowCount; i++) {
             if (windows[i].visible) {
                 drawConsoleWindow(
                     windows[i].x, windows[i].y,
@@ -144,9 +143,8 @@ int main() {
             }
         }
 
+        // 마우스 커서 출력
         drawCursor(mouseX, mouseY, frame++);
-        if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) break;
-
         Sleep(100);
     }
 
