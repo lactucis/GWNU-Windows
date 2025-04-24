@@ -48,7 +48,7 @@ int main() {
        
         // 마우스 위치 표시
         SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), (COORD) { mousePos.x / 9, mousePos.y / 18 });
-        printf("<");
+        printf("+");
 
 
         // 종료 조건: Q 키를 누르면 프로그램 종료
