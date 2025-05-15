@@ -18,6 +18,29 @@ typedef struct
     Vec2 scale;                     // 크기(x, y 스케일)
 } Transform;
 
+typedef struct
+{
+    Transform transform;
+} Square;
+
+void draw_square(Square* sq)
+{
+    glPushMatrix();
+
+    glTranslatef(sq->transform.position.x, sq->transform.position.y, 0.0f);
+    glRotatef(sq->transform.rotation * (180.0f / PI), 0.0f, 0.0f, 1.0f);
+    glScalef(sq->transform.scale.x, sq->transform.scale.y, 1.0f);
+
+    glBegin(GL_QUADS);
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glVertex2f(-0.5f, 0.5f);
+    glVertex2f(0.5f, 0.5f);
+    glVertex2f(0.5f, -0.5f);
+    glVertex2f(-0.5f, -0.5f);
+    glEnd();
+
+    glPopMatrix();
+}
 
 // 원 구조체: 변환 정보와 세그먼트 개수 가짐
 typedef struct
@@ -54,7 +77,7 @@ void draw_circle(Circle* c, float r, float g, float b)
 void draw_line(float x1, float y1, float x2, float y2) {
     glLineWidth(3.0f);
 
-    glBegin(GL_LINE);
+    glBegin(GL_LINES);
     glColor3f(0.0f, 0.0f, 0.0f);
     glVertex2f(x1, y1);
     glVertex2f(x2, y2);
@@ -80,10 +103,13 @@ int main()
 
     // 도형 초기화: (위치, 회전, 크기)
 
+    Square sq = { {{0.0f, 0.0f}, 0, {5, 5}} };
+
     Circle face = { {{0.0f, 0.0f}, 0, {1.5, 1.5}}, 32 };          // 원: (0.5,0.5), 회전0, 스케일1, 32세그먼트
+    Circle faceline = { {{0.0f, 0.0f}, 0, {1.52, 1.52}}, 32 };          // 원: (0.5,0.5), 회전0, 스케일1, 32세그먼트
     Circle nose = { {{0.0f, -0.2f}, 0, {0.2, 0.2}}, 32 };          // 원: (0.5,0.5), 회전0, 스케일1, 32세그먼트
-    Circle mouth_white1 = { {{0.1f, -0.33f}, 0, {0.3, 0.3}}, 32 }; // 하얀 원
-    Circle mouth_white2 = { {{-0.1f, -0.33f}, 0, {0.3, 0.3}}, 32 }; // 하얀 원
+    Circle mouth_white1 = { {{0.13f, -0.33f}, 0, {0.3, 0.3}}, 32 }; // 하얀 원
+    Circle mouth_white2 = { {{-0.13f, -0.33f}, 0, {0.3, 0.3}}, 32 }; // 하얀 원
     Circle left_eye = { {{-0.63f, 0.19f}, 0, {0.11f, 0.11f}}, 32 };   // 왼쪽 눈
     Circle right_eye = { {{0.64f, 0.19f}, 0, {0.11f, 0.11f}}, 32 };   // 오른쪽 눈
 
@@ -91,25 +117,27 @@ int main()
     {
         float time = (float)glfwGetTime();      // 프로그램 시작 후 흐른 시간(초)
 
-        
 
         glClear(GL_COLOR_BUFFER_BIT);                               // 화면 초기화(지움)
 
+        draw_square(&sq);
+
+        draw_circle(&faceline, 0.0f, 0.0f, 0.0f);
         draw_circle(&face, 0.0f, 0.44f, 0.75f);
-        
+
         draw_circle(&left_eye, 0.0f, 0.0f, 0.0f);
         draw_circle(&right_eye, 0.0f, 0.0f, 0.0f);
         draw_circle(&mouth_white1, 1.0f, 1.0f, 1.0f);
         draw_circle(&mouth_white2, 1.0f, 1.0f, 1.0f);
         draw_circle(&nose, 0.0f, 0.0f, 0.0f);
 
-        draw_line(-0.35f, -0.11f, -0.85f, -0.15f);
-        draw_line(-0.32f, -0.19f, -0.85f, -0.31f);
-        draw_line(-0.30f, -0.29f, -0.77f, -0.48f);
+        draw_line(-0.20f, -0.23f, -0.45f, -0.18f);
+        draw_line(-0.22f, -0.35f, -0.45f, -0.35f);
+        draw_line(-0.20f, -0.43f, -0.45f, -0.50f);
 
-        draw_line(0.35f, -0.11f, 0.85f, -0.15f);
-        draw_line(0.32f, -0.19f, 0.85f, -0.31f);
-        draw_line(0.30f, -0.29f, 0.77f, -0.48f);
+        draw_line(0.20f, -0.23f, 0.45f, -0.18f);
+        draw_line(0.20f, -0.33f, 0.45f, -0.33f);
+        draw_line(0.20f, -0.43f, 0.45f, -0.48f);
 
         glfwSwapBuffers(window);                                    // 버퍼 스왑(화면 갱신)
         glfwPollEvents();                                           // 이벤트(입력 등) 처리
