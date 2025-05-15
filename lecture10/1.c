@@ -1,12 +1,12 @@
-#pragma comment(lib, "opengl32.lib")
+﻿#pragma comment(lib, "opengl32.lib")
 #include <GLFW/glfw3.h>
 #include <math.h>
 
 void draw_circle(float cx, float cy, float r, int segments) {
-    glBegin(GL_TRIANGLE_FAN); 
+    glBegin(GL_TRIANGLE_FAN);
 
     glColor3f(0.2f, 0.6f, 1.0f);
-    glVertex2f(cx, cy);        
+    glVertex2f(cx, cy);
 
     for (int i = 0; i <= segments; i++) {
         float theta = 2.0f * 3.1415926f * i / segments;
@@ -24,6 +24,7 @@ int main() {
     GLFWwindow* window = glfwCreateWindow(500, 500, "GLFW: Circle", NULL, NULL);
     if (!window) {
         glfwTerminate();
+
         return -1;
     }
 
