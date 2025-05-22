@@ -21,7 +21,7 @@
     <ClCompile Include="1digital.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="pretty.c">
+    <ClCompile Include="2.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
