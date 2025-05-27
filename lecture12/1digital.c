@@ -1,7 +1,8 @@
-#pragma comment(lib, "opengl32.lib")
+﻿#pragma comment(lib, "opengl32.lib")
 #include <GLFW/glfw3.h>
 #include <math.h>
-#include <stdbool.h> // bool, true, false ���
+#include <stdbool.h> // bool, true, false 사용
+#include <time.h>
 
 #define PI 3.1415926535f
 
@@ -23,7 +24,7 @@ typedef struct { float x, y; } Vec2;
 typedef struct { Vec2 position; float rotation; Vec2 scale; } Transform;
 typedef struct { Transform transform; int segments; } Circle;
 
-// �� �׸��� �Լ� (�׶��̼� �ɼ� �߰�)
+// 원 그리기 함수 (그라데이션 옵션 추가)
 void draw_circle(Circle* c, float r_edge, float g_edge, float b_edge, float r_center_mult, float g_center_mult, float b_center_mult) {
     glPushMatrix();
     glTranslatef(c->transform.position.x, c->transform.position.y, 0.0f);
@@ -47,36 +48,35 @@ void draw_circle(Circle* c, float r_edge, float g_edge, float b_edge, float r_ce
     glPopMatrix();
 }
 
-// �ð�ħ �׸��� �Լ� (���� ȭ���� ��� �߰�)
 void draw_hand(float length, float thickness, float r, float g, float b, float angle_degrees) {
     glPushMatrix();
     glRotatef(angle_degrees, 0.0f, 0.0f, 1.0f);
     glLineWidth(thickness);
     glColor3f(r, g, b);
 
-    // �ֵ� ħ ����
+    // 주된 침 라인
     glBegin(GL_LINES);
-    glVertex2f(0.0f, 0.0f);    // ħ�� ������ (�߽�)
-    glVertex2f(0.0f, length); // ħ�� ���� (ȭ������ ������ �κ�)
+    glVertex2f(0.0f, 0.0f);   // 침의 시작점 (중심)
+    glVertex2f(0.0f, length); // 침의 끝점 (화살촉의 뾰족한 부분)
     glEnd();
 
-    // ȭ���� ('>' ���)
-    if (length > 0.01f) { // �ſ� ª�� ħ���� ȭ������ �׸��� �ʵ��� ���� �߰� (������)
-        float barb_len_offset = length * 0.12f; // ȭ������ �ڷ� ������� ���� (ħ ������ 12%)
-        float barb_half_width = length * 0.06f; // ȭ������ ���� �ʺ� (ħ ������ 6%)
+    // 화살촉 (속이 채워진 삼각형 '>' 모양)
+    if (length > 0.01f) {
+        // 화살촉의 크기를 시침/분침/초침에 따라 다르게 조절할 수 있습니다.
+        // 예를 들어 시침은 더 뭉툭하게 만들 수 있습니다.
+        float barb_len_offset = length * 0.15f; // 화살촉의 길이 (침 길이의 15%)
+        float barb_half_width = length * 0.10f; // 화살촉의 절반 너비 (침 길이의 10%)
 
-        // ȭ������ ������ �κ��� (0, length)
-        // ���� ������ ����: (-barb_half_width, length - barb_len_offset)
-        // ������ ������ ����: (barb_half_width, length - barb_len_offset)
+        glBegin(GL_TRIANGLES); // ★ 핵심: GL_LINES 대신 GL_TRIANGLES 사용
 
-        glBegin(GL_LINES);
-        // ������ �������� ���� ������ �غκ����� �̾����� ��
-        glVertex2f(0.0f, length);
+        // 삼각형을 구성하는 세 꼭짓점
+        // 1. 뾰족한 끝점
+        glVertex2f(0.0f, length + 0.03f);
+        // 2. 왼쪽 갈고리 밑부분
         glVertex2f(-barb_half_width, length - barb_len_offset);
-
-        // ������ �������� ������ ������ �غκ����� �̾����� ��
-        glVertex2f(0.0f, length);
+        // 3. 오른쪽 갈고리 밑부분
         glVertex2f(barb_half_width, length - barb_len_offset);
+
         glEnd();
     }
     glPopMatrix();
@@ -159,7 +159,7 @@ void draw_digital_display(int hour_24, int minute, float base_x, float base_y, f
 
 int main() {
     if (!glfwInit()) return -1;
-    GLFWwindow* window = glfwCreateWindow(500, 500, "Arrow Hands Pastel Clock (500x500)", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(500, 500, "Arrow Hands Pastel Clock (500x500) - Real Time", NULL, NULL);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -167,6 +167,7 @@ int main() {
     glfwMakeContextCurrent(window);
     glOrtho(-1, 1, -1, 1, -1, 1);
 
+    // --- 시계 요소들의 크기 및 위치 설정 (기존과 동일) ---
     float main_dial_radius = 0.75f;
     Circle clockBorder = { {{0.0f, 0.0f}, 0.0f, {(main_dial_radius + 0.035f) * 2.0f, (main_dial_radius + 0.035f) * 2.0f}}, 64 };
     Circle clockFace = { {{0.0f, 0.0f}, 0.0f, {main_dial_radius * 2.0f, main_dial_radius * 2.0f}}, 64 };
@@ -184,8 +185,6 @@ int main() {
     float minute_hand_rel_len = 0.65f;
     float second_sub_hand_rel_len = 0.8f;
 
-    const float start_time_offset_seconds = 1.0f * 3600.0f;
-
     float digit_char_height = main_dial_radius * 0.18f;
     float digit_char_width = digit_char_height * 0.6f;
     float digit_spacing = digit_char_width * 0.3f;
@@ -199,55 +198,125 @@ int main() {
     float digital_bg_height = digit_char_height + digital_bg_padding_y;
     float digital_bg_center_y = digital_base_y + digit_char_height / 2.0f;
 
+    // main 함수 내부의 while 루프 전체를 이 코드로 교체하세요.
     while (!glfwWindowShouldClose(window)) {
-        float elapsed_seconds_float = (float)glfwGetTime();
-        float total_simulated_seconds_float = start_time_offset_seconds + elapsed_seconds_float;
+        // --- 실시간 정보 가져오기 ---
+        time_t now = time(NULL);
+        struct tm* local_time = localtime(&now);
 
-        float sim_s_continuous = fmod(total_simulated_seconds_float, 60.0f);
-        int total_simulated_seconds_int = (int)floor(total_simulated_seconds_float);
-        int current_discrete_minute = (total_simulated_seconds_int / 60) % 60;
-        int current_discrete_hour_of_day = (total_simulated_seconds_int / 3600);
-        int current_discrete_hour_for_analog = current_discrete_hour_of_day % 12;
+        int current_hour_24 = local_time->tm_hour;
+        int current_minute = local_time->tm_min;
+        int current_second = local_time->tm_sec;
 
-        float sec_angle = -(sim_s_continuous * 6.0f);
-        float min_angle = -((float)current_discrete_minute * 6.0f + sim_s_continuous * 0.1f); // ��ħ�� �ʿ� ���� �ε巴��
-        float hour_angle = -((float)current_discrete_hour_for_analog * 30.0f + (float)current_discrete_minute * 0.5f + sim_s_continuous * (0.5f / 60.0f)); // ��ħ�� �ʿ� ���� �� �ε巴��
+        // --- 각도 계산 ---
+        float sec_angle = -((float)current_second * 6.0f); // 초침: 1초에 한 칸씩 이동
 
+        // ★★★ 분침 각도 계산 수정 ★★★
+        // 분침은 '분'이 바뀔 때만 한 칸씩 움직이도록 정수 값인 current_minute만 사용합니다.
+        float min_angle = -((float)current_minute * 6.0f);
+
+        // 시침은 '분'의 흐름에 따라 계속 부드럽게 움직입니다.
+        float hour_angle = -((float)(current_hour_24 % 12) * 30.0f + (float)current_minute * 0.5f);
+
+        // --- 렌더링 (그리기) ---
         glClearColor(0.88f, 0.85f, 0.92f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // 1. 시계의 가장 기본 배경 요소들을 먼저 그립니다.
         draw_circle(&clockBorder, 0.65f, 0.63f, 0.68f, 1.0f, 1.0f, 1.0f);
         draw_circle(&clockFace, 0.95f, 0.93f, 0.90f, 1.05f, 1.05f, 1.05f);
-
         draw_clock_markers(main_dial_radius);
-
         draw_filled_rectangle(0.0f, digital_bg_center_y, digital_bg_width, digital_bg_height,
             0.80f, 0.78f, 0.82f);
 
-        int display_hour = current_discrete_hour_of_day % 24;
-        draw_digital_display(display_hour, current_discrete_minute,
-            0.0f, digital_base_y,
-            digit_char_width, digit_char_height, digit_spacing, digit_line_thickness);
-
-        draw_circle(&centerDot, 0.40f, 0.40f, 0.45f, 1.0f, 1.0f, 1.0f);
-
-        // ��ħ, ��ħ �׸��� (ȭ���� �����)
-        draw_hand(main_dial_radius * hour_hand_rel_len, 7.0f, 0.45f, 0.60f, 0.73f, hour_angle);
-        draw_hand(main_dial_radius * minute_hand_rel_len, 5.0f, 0.45f, 0.73f, 0.63f, min_angle);
-
+        // 2. 초침 서브 다이얼을 시침/분침보다 먼저 그립니다.
         draw_circle(&secondsSubDialBorder, 0.60f, 0.58f, 0.62f, 1.0f, 1.0f, 1.0f);
         draw_circle(&secondsSubDialFace, 0.90f, 0.86f, 0.87f, 1.05f, 1.05f, 1.05f);
         draw_circle(&subCenterDot, 0.35f, 0.35f, 0.40f, 1.0f, 1.0f, 1.0f);
 
         glPushMatrix();
         glTranslatef(secondsSubDialFace.transform.position.x, secondsSubDialFace.transform.position.y, 0.0f);
-        // ��ħ �׸��� (ȭ���� �����)
         draw_hand(sub_dial_radius * second_sub_hand_rel_len, 2.5f, 0.85f, 0.55f, 0.50f, sec_angle);
         glPopMatrix();
 
+        // 3. 디지털 숫자와 메인 중심점을 그립니다.
+        draw_digital_display(current_hour_24, current_minute,
+            0.0f, digital_base_y,
+            digit_char_width, digit_char_height, digit_spacing, digit_line_thickness);
+        draw_circle(&centerDot, 0.40f, 0.40f, 0.45f, 1.0f, 1.0f, 1.0f);
+
+        // 4. 가장 마지막에 시침과 분침을 그려서 모든 요소들 위로 올라오게 합니다.
+        draw_hand(main_dial_radius * hour_hand_rel_len, 7.0f, 0.45f, 0.60f, 0.73f, hour_angle);
+        draw_hand(main_dial_radius * minute_hand_rel_len, 5.0f, 0.45f, 0.73f, 0.63f, min_angle);
+
+        // --- 버퍼 교체 및 이벤트 처리 ---
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
     glfwTerminate();
     return 0;
 }
+
+/*
+코드 설명
+이 C++ 코드는 이전 예제들의 개념을 모두 종합하여, 실시간으로 동작하는 정교한 하이브리드(아날로그 + 디지털) 시계를 구현한 매우 완성도 높은 프로그램입니다.
+
+GLFW와 구형 OpenGL을 사용하여, 현재 컴퓨터의 시스템 시간을 받아와 파스텔 톤의 미려한 시계 화면에 표시합니다.
+
+전체적인 기능 및 특징
+실시간 동작: <time.h> 라이브러리를 사용해 현재 시간을 실시간으로 가져와 시계에 반영합니다.
+하이브리드 디스플레이: 아날로그 시계(시침, 분침)와 디지털 시계(HH:MM 형식)를 한 화면에 모두 표시합니다.
+정교한 시각적 요소:
+화살촉 모양 시계침: draw_hand 함수는 단순한 선이 아닌, 끝이 채워진 삼각형(화살촉) 모양의 시계침을 그립니다.
+초침 서브 다이얼: 초침은 메인 시계판이 아닌, 별도의 작은 원(서브 다이얼) 안에서 움직입니다.
+7세그먼트 디지털 폰트: SEVEN_SEGMENT_PATTERNS 배열을 기반으로 디지털 숫자를 직접 그려냅니다.
+계층적 렌더링: 배경, 다이얼, 시계침 등을 순서대로 그려 겹치는 부분을 자연스럽게 표현합니다.
+파스텔 톤과 그라데이션: draw_circle 함수는 중심과 가장자리의 색을 다르게 지정하여 은은한 그라데이션 효과를 줍니다.
+코드 상세 분석
+1. 핵심 데이터 및 구조체
+SEVEN_SEGMENT_PATTERNS: 0부터 9까지의 숫자를 7세그먼트 디스플레이로 표현하기 위한 true/false 패턴을 정의한 2차원 배열입니다. 디지털 시간 표시에 사용되는 '폰트' 역할을 합니다.
+구조체 (Vec2, Transform, Circle): 이전 예제와 동일하게 도형의 위치, 회전, 크기 등 기하학적 정보를 관리하는 데 사용됩니다.
+2. 주요 그리기 함수 (Building Blocks)
+draw_circle(...): 원을 그리는 함수지만, 중심 색상과 가장자리 색상을 다르게 설정할 수 있어 입체감 있는 그라데이션 효과를 줍니다. 시계판, 서브 다이얼 등에 사용됩니다.
+draw_hand(...): 이 시계의 핵심적인 시각 요소를 담당합니다.
+glRotatef로 각도에 맞게 좌표계를 회전시킵니다.
+glBegin(GL_LINES)로 침의 중심선을 그립니다.
+glBegin(GL_TRIANGLES)로 침의 끝부분에 속이 채워진 삼각형을 그려 화살촉 모양을 완성합니다.
+draw_clock_markers(): 60개의 눈금을 그립니다. i % 5 == 0 조건을 사용해 5분 단위의 눈금을 더 굵고 길게 그려 가독성을 높입니다.
+draw_seven_segment_digit(...): 숫자 하나와 위치, 크기 등을 인자로 받아 SEVEN_SEGMENT_PATTERNS를 참조하여 선분들을 그려 숫자를 표시합니다.
+draw_digital_display(...): 관리자(Manager) 역할의 함수입니다. 시(hour)와 분(minute) 값을 받아 각 자릿수를 계산하고, draw_seven_segment_digit와 draw_digital_colon 함수를 적절히 호출하여 HH:MM 형식의 완전한 디지털 시간을 화면에 그립니다.
+draw_filled_rectangle(...): 디지털 시계의 배경이 되는 사각형을 그립니다.
+3. main 함수 (프로그램 실행 흐름)
+초기화 및 설정:
+
+GLFW 창을 생성하고 glOrtho로 2D 좌표계를 설정합니다.
+시계의 각 구성 요소(시계판, 서브 다이얼, 시계침 길이, 디지털 숫자 크기 등)의 크기와 위치를 변수로 미리 계산하고 설정합니다. 모든 크기가 main_dial_radius에 상대적으로 정의되어 있어 전체적인 크기 조절이 용이합니다.
+메인 루프 (while):
+
+시간 정보 획득:
+
+C
+
+time_t now = time(NULL);
+struct tm* local_time = localtime(&now);
+int current_hour_24 = local_time->tm_hour;
+// ... 분, 초 정보 획득
+루프가 돌 때마다 현재 시스템 시간을 가져옵니다.
+
+각도 계산:
+
+sec_angle, min_angle, hour_angle을 계산합니다.
+특히 시침(hour_angle)은 분의 흐름(current_minute)에 따라 부드럽게 움직이도록 계산되어 실제 아날로그 시계처럼 동작합니다.
+분침(min_angle)은 current_minute 정수 값만 사용하여 1분에 한 칸씩 명확하게 움직입니다.
+렌더링 (그리기 순서):
+glClear로 화면을 파스텔 톤의 배경색으로 지운 뒤, 뒤에 있는 요소부터 순서대로 그려 올바른 레이어를 만듭니다. (화가 알고리즘)
+
+배경 요소: 메인 시계 테두리, 시계판, 눈금, 디지털 시계 배경 사각형.
+서브 다이얼: 초침이 그려질 작은 시계판과 그 중심점, 그리고 회전하는 초침.
+전경 요소 (중간): 디지털 숫자들과 메인 시계의 중심점.
+최상위 요소: 시침과 분침을 가장 마지막에 그려 다른 모든 요소들 위에 표시되도록 합니다.
+화면 업데이트: glfwSwapBuffers와 glfwPollEvents로 최종 이미지를 화면에 표시하고 이벤트를 처리합니다.
+
+결론 📝
+이 코드는 단순한 도형 그리기를 넘어, 여러 모듈화된 함수와 실시간 데이터를 결합하여 하나의 완성된 애플리케이션(하이브리드 시계)을 만드는 과정을 잘 보여줍니다. 각 부분을 독립적인 함수로 구현하고, main 함수에서는 이들을 조립하여 원하는 결과를 만들어내는 체계적인 프로그래밍 방식을 배울 수 있는 훌륭한 예제입니다.
+*/
