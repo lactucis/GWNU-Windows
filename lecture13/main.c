@@ -1,112 +1,134 @@
-#pragma comment(lib, "opengl32.lib")
+ï»¿ï»¿/*
+ * GLFW + OpenGL 1.1 ì• ë‹ˆë©”ì´ì…˜ ë°ëª¨
+ * - ì˜¤ë¥¸ìª½ì— ìŠ¤ë§ˆì¼ë§¨(ì› + ëˆˆ + ì›ƒëŠ” ìž…) ë°°ì¹˜
+ * - ìŠ¤ë§ˆì¼ë§¨ì€ í™”ë©´ ì¤‘ì‹¬ì„ ê¸°ì¤€ìœ¼ë¡œ ê³µì „
+ * - ì–¼êµ´(ëˆˆ/ìž…)ì€ ìžì „ ê³µì „ì— ë°˜ëŒ€ ë°©í–¥ìœ¼ë¡œ íšŒì „í•´ í•­ìƒ ìˆ˜í‰ ìœ ì§€
+ * - ìŠ¤ë§ˆì¼ë§¨ ì£¼ë³€ì— ìœ¡ë§ì„±(ë³„)ì´ ê³µì „í•˜ë©° ìžì²´ì ìœ¼ë¡œ ë¹ ë¥´ê²Œ ìžì „
+ */
+
 #include <GLFW/glfw3.h>
-#include <math.h>                   // ¼öÇÐ ÇÔ¼ö(sin, cos µî) »ç¿ë
-#define PI 3.1415926535f            // ¿øÁÖÀ²(ÆÄÀÌ) »ó¼ö Á¤ÀÇ, f´Â floatÇü
+#include <math.h>
 
+#pragma comment(lib, "opengl32.lib")
 
-// 2Â÷¿ø º¤ÅÍ ±¸Á¶Ã¼
-typedef struct
-{
-    float x, y;                     // x, y ÁÂÇ¥°ª
-} Vec2;
+#define PI 3.1415926535f
 
-// º¯È¯(Transformation) Á¤º¸ ±¸Á¶Ã¼
-typedef struct
-{
-    Vec2 position;                  // À§Ä¡ (x, y)
-    float rotation;                 // È¸Àü °¢µµ(¶óµð¾È)
-    Vec2 scale;                     // Å©±â(x, y ½ºÄÉÀÏ)
-} Transform;
-
-typedef struct
-{
-    Transform transform;
-    int segments;
-} Circle;
-
-// ¿ø ±×¸®±â ÇÔ¼ö
-void draw_circle(Circle* c, float r, float g, float b)
-{
-    glPushMatrix(); // ÇöÀç º¯È¯Çà·Ä ÀúÀå
-
-    // À§Ä¡ ÀÌµ¿, È¸Àü, Å©±â º¯È¯ Àû¿ë
-    glTranslatef(c->transform.position.x, c->transform.position.y, 0.0f);             // À§Ä¡ ÀÌµ¿
-    glRotatef(c->transform.rotation * (180.0f / PI), 0.0f, 0.0f, 1.0f);               // È¸Àü
-    glScalef(c->transform.scale.x, c->transform.scale.y, 1.0f);                      // Å©±â º¯È¯
-
-    glBegin(GL_TRIANGLE_FAN);                   // »ï°¢Çü ºÎÃ¤²Ã·Î ¿ø ±×¸®±â ½ÃÀÛ
-    glColor3f(r, g, b);
-    glVertex2f(0.0f, 0.0f);                     // Áß½ÉÁ¡
-
-    for (int i = 0; i <= c->segments; ++i)      // ¼¼±×¸ÕÆ®(Á¡) °³¼ö¸¸Å­ ¹Ýº¹
-    {
-        float angle = 2.0f * PI * i / c->segments;     // ÇöÀç °¢µµ(¶óµð¾È)
-        glVertex2f(cosf(angle) * 0.5f, sinf(angle) * 0.5f); // ¿ø À§ÀÇ Á¡(¹ÝÁö¸§ 0.5)
+ // ì› ê·¸ë¦¬ê¸°: ë°˜ì§€ë¦„ r, ì„¸ê·¸ë¨¼íŠ¸ ìˆ˜ seg
+void drawCircle(float r, int seg) {
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(0.0f, 0.0f);            // ì¤‘ì‹¬
+    for (int i = 0; i <= seg; ++i) {
+        float a = 2.0f * PI * i / seg;
+        glVertex2f(cosf(a) * r, sinf(a) * r);
     }
-
-    glEnd();                                    // ¿ø ±×¸®±â ³¡
-
-    glPopMatrix(); // º¯È¯Çà·Ä º¹¿ø
-}
-
-void draw_line(float x1, float y1, float x2, float y2) {
-    glLineWidth(3.0f);
-
-    glBegin(GL_LINES);
-    glColor3f(0.0f, 0.0f, 0.0f);
-    glVertex2f(x1, y1);
-    glVertex2f(x2, y2);
     glEnd();
 }
 
+// ìŠ¤ë§ˆì¼ë§¨ ì–¼êµ´(ëˆˆ + ìž…) ê·¸ë¦¬ê¸°
+void drawFace(float eyeR, float eyeOffsetX, float eyeOffsetY) {
+    // ì™¼ìª½ ëˆˆ
+    glPushMatrix();
+    glTranslatef(-eyeOffsetX, eyeOffsetY, 0.0f);
+    drawCircle(eyeR, 16);
+    glPopMatrix();
 
+    // ì˜¤ë¥¸ìª½ ëˆˆ
+    glPushMatrix();
+    glTranslatef(eyeOffsetX, eyeOffsetY, 0.0f);
+    drawCircle(eyeR, 16);
+    glPopMatrix();
 
-
-int main()
-{
-    // 1. ÃÊ±âÈ­
-    if (!glfwInit())
-        return -1;
-
-    // 2. À©µµ¿ì »ý¼º
-    GLFWwindow* window = glfwCreateWindow(800, 700, "Window Title", NULL, NULL);
-    if (!window)
-    {
-        glfwTerminate();
-        return -1;
+    // ì›ƒëŠ” ìž… (ë°˜ì› ì•„í¬)
+    glBegin(GL_LINE_STRIP);
+    for (int i = 0; i <= 20; ++i) {
+        // -30Â° .. -150Â° ì‚¬ì´
+        float a = (-30.0f - 120.0f * i / 20.0f) * (PI / 180.0f);
+        glVertex2f(cosf(a) * 0.5f * eyeOffsetX, sinf(a) * 0.5f * eyeOffsetY);
     }
+    glEnd();
+}
 
-    // 3. ÄÁÅØ½ºÆ® ¼³Á¤
+// ìœ¡ë§ì„±(ë³„) ê·¸ë¦¬ê¸°: ë°˜ì§€ë¦„ r
+void drawHexagram(float r) {
+    float h = r * 0.866f; // sqrt(3)/2 * r
+    glBegin(GL_TRIANGLES);
+    // ìœ— ì‚¼ê°í˜•
+    glVertex2f(0.0f, r);
+    glVertex2f(-h, -r * 0.5f);
+    glVertex2f(h, -r * 0.5f);
+    // ì•„ëž« ì‚¼ê°í˜• (ì—­ë°©í–¥)
+    glVertex2f(0.0f, -r);
+    glVertex2f(-h, r * 0.5f);
+    glVertex2f(h, r * 0.5f);
+    glEnd();
+}
+
+int main(void) {
+    // 1) GLFW ì´ˆê¸°í™”
+    if (!glfwInit()) return -1;
+
+    // 2) ìœˆë„ìš° ìƒì„± & ì»¨í…ìŠ¤íŠ¸ ë°”ì¸ë”©
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Smiley Orbit & Hexagram", NULL, NULL);
+    if (!window) { glfwTerminate(); return -1; }
     glfwMakeContextCurrent(window);
-    glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0); // 2D ÁÂÇ¥°è ¼³Á¤ (°ÅÀÇ ÇÊ¼ö)
 
-    Circle face = { {{-0.7f, 0.0f}, 0, {0.5, 0.5}}, 32 };          // ¿ø: (0.5,0.5), È¸Àü0, ½ºÄÉÀÏ1, 32¼¼±×¸ÕÆ®
+    // 3) 2D ì§êµ íˆ¬ì˜ ì„¤ì • (ì¢Œí‘œê³„ -1..1)
+    glOrtho(-1, 1, -1, 1, -1, 1);
 
-    const float orbit_radius = 0.7f;
-    const float circle_radius = 0.1f;
+    // ì• ë‹ˆë©”ì´ì…˜ íŒŒë¼ë¯¸í„°
+    const float smileOrbitR = 0.6f;   // ìŠ¤ë§ˆì¼ë§¨ ê³µì „ ë°˜ê²½
+    const float smileRadius = 0.15f;  // ìŠ¤ë§ˆì¼ë§¨ ì–¼êµ´ ë°˜ê²½
+    const float eyeR = 0.02f;         // ëˆˆ ë°˜ê²½
+    const float eyeOffX = 0.05f,
+        eyeOffY = 0.07f;      // ëˆˆ ìœ„ì¹˜ ì˜¤í”„ì…‹
+    const float hexOrbitR = 0.3f;     // ìœ¡ë§ì„± ê³µì „ ë°˜ê²½
+    const float hexRadius = 0.07f;    // ìœ¡ë§ì„± í¬ê¸°
 
-    // 4. ¸ÞÀÎ ·çÇÁ
-    while (!glfwWindowShouldClose(window))
-    {
-        // 5. È­¸é Áö¿ì±â
+    // ë©”ì¸ ë£¨í”„
+    while (!glfwWindowShouldClose(window)) {
+        float t = (float)glfwGetTime();
+
+        // ê³µì „/ìžì „ ê°ë„ ê³„ì‚°
+        float smileOrbitAng = t * 20.0f;     // ìŠ¤ë§ˆì¼ë§¨ ê³µì „ ì†ë„
+        float hexOrbitAng = t * 60.0f;     // ë³„ ê³µì „ ì†ë„ (ë¹ ë¦„)
+        float hexSelfAng = t * 200.0f;    // ë³„ ìžì²´ ìžì „ ì†ë„ (ë” ë¹ ë¦„)
+
+        // 4) í™”ë©´ í´ë¦¬ì–´
         glClear(GL_COLOR_BUFFER_BIT);
 
-        float time = (float)glfwGetTime();
+        // 5) ìŠ¤ë§ˆì¼ë§¨ ê³µì „ ê¶¤ë„
+        glPushMatrix();
+        glRotatef(smileOrbitAng, 0, 0, 1);                // ì¤‘ì‹¬ ê¸°ì¤€ ê³µì „
+        glTranslatef(smileOrbitR, 0.0f, 0.0f);          // ê¶¤ë„ ë°˜ê²½ë§Œí¼ ì´ë™
 
-        
+        // ì–¼êµ´ ê·¸ë¦¬ê¸°
+        glColor3f(1.0f, 1.0f, 0.0f);                    // ë…¸ëž‘ ì–¼êµ´
+        drawCircle(smileRadius, 64);
 
-        // --- ¿©±â¿¡ ±×¸² ±×¸®´Â ÄÚµå ÀÛ¼º ---
-        draw_circle(&face, 1.0f, 1.0f, 0.0f);
-        draw_line(-0.8f, 0.1f, -0.8f, 0.0f);
-        draw_line(-0.6f, 0.1f, -0.6f, 0.0f);
+        // ì–¼êµ´ íŠ¹ì§•(ëˆˆ/ìž…)ì€ ì—­íšŒì „ìœ¼ë¡œ ìˆ˜í‰ ìœ ì§€
+        glPushMatrix();
+        glRotatef(-smileOrbitAng, 0, 0, 1);
+        glColor3f(0.0f, 0.0f, 0.0f);                  // ëˆˆ/ìž… ê²€ì •
+        drawFace(eyeR, eyeOffX, eyeOffY);
+        glPopMatrix();
 
+        // 6) ìœ¡ë§ì„± ê³µì „ & ìžì „
+        glPushMatrix();
+        glRotatef(hexOrbitAng, 0, 0, 1);                // ìŠ¤ë§ˆì¼ë§¨ ê¸°ì¤€ ê³µì „
+        glTranslatef(hexOrbitR, 0.0f, 0.0f);          // ê¶¤ë„ ë°˜ê²½ë§Œí¼ ì´ë™
+        glRotatef(hexSelfAng, 0, 0, 1);                 // ë³„ ìžì²´ ìžì „
+        glColor3f(0.2f, 0.6f, 1.0f);                  // íŒŒëž‘ ë³„
+        drawHexagram(hexRadius);
+        glPopMatrix();
 
-        // 6. ¹öÆÛ ±³Ã¼ ¹× ÀÌº¥Æ® Ã³¸®
+        glPopMatrix();  // ìŠ¤ë§ˆì¼ë§¨ ê³µì „ í–‰ë ¬ ë³µì›
+
+        // 7) ë²„í¼ ìŠ¤ì™‘ & ì´ë²¤íŠ¸ ì²˜ë¦¬
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    // 7. Á¾·á
+    // 8) ì •ë¦¬
     glfwTerminate();
     return 0;
 }
@@ -114,22 +136,24 @@ int main()
 
 
 /*
-Å×½ºÆ® ¹®Á¦
+í…ŒìŠ¤íŠ¸ ë¬¸ì œ
 
-1. µ¿±×¶ó¹Ì¸¦ ÇÏ³ª ±×¸®°í, Á÷¼± Á÷¼± (´«), ÀÔ (´« »çÀÌÀÇ ¹Ý¿ø ±×¸®±â), ¹ÝÁö¸§ 0.2
-2. °¡·Î¼¼·Î ºñÀ² 1:1(Å©±â´Â »ó°ü ¾øÀ½)
-3. Á¤ °¡¿îµ¥¿¡ ³×¸ð ±×¸®±â, ÇÑ º¯Àº 0.02, ´ë°¢¼± ³×¸ð ¾È¿¡ ±×¸®±â.
-4. ³×¸ð¿Í ¾ó±¼Àº °Å¸® 0.5
-5. º°Àº ¾ó±¼ ±ÙÃ³¸¦ ÀÚÀü, ¾ó±¼Àº Áß¾ÓÀ» ±âÁØÀ¸·Î °øÀü, ¾ó±¼Àº µ¹±âµµ ÇØ¾ß ÇÔ.
-6. ¾ó±¼Àº ³ë¶û, ÀÔÀº °ËÁ¤
+1. ë™ê·¸ë¼ë¯¸ë¥¼ í•˜ë‚˜ ê·¸ë¦¬ê³ , ì§ì„  ì§ì„  (ëˆˆ), ìž… (ëˆˆ ì‚¬ì´ì˜ ë°˜ì› ê·¸ë¦¬ê¸°), ë°˜ì§€ë¦„ 0.2
+2. ê°€ë¡œì„¸ë¡œ ë¹„ìœ¨ 1:1(í¬ê¸°ëŠ” ìƒê´€ ì—†ìŒ)
+3. ì • ê°€ìš´ë°ì— ë„¤ëª¨ ê·¸ë¦¬ê¸°, í•œ ë³€ì€ 0.02, ëŒ€ê°ì„  ë„¤ëª¨ ì•ˆì— ê·¸ë¦¬ê¸°.
+4. ë„¤ëª¨ì™€ ì–¼êµ´ì€ ê±°ë¦¬ 0.5
+5. ë³„ì€ ì–¼êµ´ ê·¼ì²˜ë¥¼ ìžì „, ì–¼êµ´ì€ ì¤‘ì•™ì„ ê¸°ì¤€ìœ¼ë¡œ ê³µì „, ì–¼êµ´ì€ ëŒê¸°ë„ í•´ì•¼ í•¨.
+6. ì–¼êµ´ì€ ë…¸ëž‘, ìž…ì€ ê²€ì •
 
 
-¾Ë¾Æ¾ßÇÒ°Å
-°øÀü, ÀÚÀü ÇÊ¼ö·Î ³ª¿È
-µå·Î¿ì ¶óÀÎ, µå·Î¿ì Æ®¶óÀÌ¿¨±Û µå·Î¿ì Æ÷ÀÎÆ®
-ÀÌµ¿, È¸Àü, È®´ë, Ãà¼Ò - ¸íÈ®ÇÏ°Ô ¾Ë°í ÀÖ±â
-½ºÅÃ, Çª½¬ÆË
-ºÎ¸ð¿Í ÀÚ½Ä°ü°è ÇÏÀÌ·¯Å°¸¦ ¸¸µé¾î¼­ ¾Ö´Ï¸ÞÀÌ¼ÇÇÏ±â
+ì•Œì•„ì•¼í• ê±°
+ê³µì „, ìžì „ í•„ìˆ˜ë¡œ ë‚˜ì˜´
+ë“œë¡œìš° ë¼ì¸, ë“œë¡œìš° íŠ¸ë¼ì´ì—¥ê¸€ ë“œë¡œìš° í¬ì¸íŠ¸
+ì´ë™, íšŒì „, í™•ëŒ€, ì¶•ì†Œ - ëª…í™•í•˜ê²Œ ì•Œê³  ìžˆê¸°
+ìŠ¤íƒ, í‘¸ì‰¬íŒ
+ë¶€ëª¨ì™€ ìžì‹ê´€ê³„ í•˜ì´ëŸ¬í‚¤ë¥¼ ë§Œë“¤ì–´ì„œ ì• ë‹ˆë©”ì´ì…˜í•˜ê¸°
+ê²Ÿì–´ì‹±í¬ìŠ¤í…Œì´íŠ¸, ìƒ‰ì˜ 3ì›ìƒ‰ ì•Œê¸°
+(ìƒ‰ ë³€í™”, ì–´ë–¤ í‚¤ë¥¼ ëˆ„ë¥´ë©´ í‘œì •ì´ ë°”ë€ŒëŠ” ë“±)
 */
 
 
@@ -137,8 +161,8 @@ int main()
 
 
 /*
-1. ÇÁ·Î±×·¥ÀÇ ±âº» °ñ°Ý (°¡Àå Áß¿ä!)
-ÀÌ ±¸Á¶´Â ¾î¶² ¹®Á¦¸¦ ¹Þµç °¡Àå ¸ÕÀú ÀÛ¼ºÇØ¾ß ÇÏ´Â »À´ëÀÔ´Ï´Ù. ÅëÂ°·Î ¿Ü¿ì¼¼¿ä.
+1. í”„ë¡œê·¸ëž¨ì˜ ê¸°ë³¸ ê³¨ê²© (ê°€ìž¥ ì¤‘ìš”!)
+ì´ êµ¬ì¡°ëŠ” ì–´ë–¤ ë¬¸ì œë¥¼ ë°›ë“  ê°€ìž¥ ë¨¼ì € ìž‘ì„±í•´ì•¼ í•˜ëŠ” ë¼ˆëŒ€ìž…ë‹ˆë‹¤. í†µì§¸ë¡œ ì™¸ìš°ì„¸ìš”.
 
 C
 
@@ -147,11 +171,11 @@ C
 
 int main()
 {
-    // 1. ÃÊ±âÈ­
+    // 1. ì´ˆê¸°í™”
     if (!glfwInit())
         return -1;
 
-    // 2. À©µµ¿ì »ý¼º
+    // 2. ìœˆë„ìš° ìƒì„±
     GLFWwindow* window = glfwCreateWindow(800, 600, "Window Title", NULL, NULL);
     if (!window)
     {
@@ -159,99 +183,99 @@ int main()
         return -1;
     }
 
-    // 3. ÄÁÅØ½ºÆ® ¼³Á¤
+    // 3. ì»¨í…ìŠ¤íŠ¸ ì„¤ì •
     glfwMakeContextCurrent(window);
-    glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0); // 2D ÁÂÇ¥°è ¼³Á¤ (°ÅÀÇ ÇÊ¼ö)
+    glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0); // 2D ì¢Œí‘œê³„ ì„¤ì • (ê±°ì˜ í•„ìˆ˜)
 
-    // 4. ¸ÞÀÎ ·çÇÁ
+    // 4. ë©”ì¸ ë£¨í”„
     while (!glfwWindowShouldClose(window))
     {
-        // 5. È­¸é Áö¿ì±â
+        // 5. í™”ë©´ ì§€ìš°ê¸°
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // --- ¿©±â¿¡ ±×¸² ±×¸®´Â ÄÚµå ÀÛ¼º ---
+        // --- ì—¬ê¸°ì— ê·¸ë¦¼ ê·¸ë¦¬ëŠ” ì½”ë“œ ìž‘ì„± ---
 
-        // 6. ¹öÆÛ ±³Ã¼ ¹× ÀÌº¥Æ® Ã³¸®
+        // 6. ë²„í¼ êµì²´ ë° ì´ë²¤íŠ¸ ì²˜ë¦¬
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    // 7. Á¾·á
+    // 7. ì¢…ë£Œ
     glfwTerminate();
     return 0;
 }
-2. OpenGL ÇÙ½É ¾Ï±â»çÇ× (±×¸®±â ±â¼ú)
-°¡. ±×¸®±â ±âº» (glBegin / glEnd)
-glBegin(MODE); / glEnd();: ¸ðµç ±×¸®±âÀÇ ½ÃÀÛ°ú ³¡. MODE¸¦ ÀØÀ¸¸é ¾È µË´Ï´Ù.
-GL_LINES: ¼± ±×¸®±â (Á¡ 2°³¾¿)
-GL_TRIANGLES: »ï°¢Çü ±×¸®±â (Á¡ 3°³¾¿)
-GL_QUADS: »ç°¢Çü ±×¸®±â (Á¡ 4°³¾¿)
-GL_TRIANGLE_FAN: Ã¤¿öÁø ¿ø ±×¸®±â (Áß½ÉÁ¡ 1°³ + ³ª¸ÓÁö Á¡µé)
-glVertex2f(x, y);: 2D Á¤Á¡(Á¡)À» Âï´Â ÇÔ¼ö. glBegin/glEnd ¾È¿¡¼­¸¸ ÀÇ¹Ì°¡ ÀÖ½À´Ï´Ù.
-glColor3f(r, g, b);: »ö»óÀ» ÁöÁ¤ÇÏ´Â ÇÔ¼ö (0.0 ~ 1.0 »çÀÌÀÇ float °ª). glVertex Àü¿¡ È£ÃâÇØ¾ß ÇØ´ç Á¤Á¡¿¡ »öÀÌ Àû¿ëµË´Ï´Ù.
-glLineWidth(µÎ²²);: ¼±ÀÇ µÎ²²¸¦ ÁöÁ¤ÇÕ´Ï´Ù.
-³ª. ÁÂÇ¥ º¯È¯ (°¡Àå Çò°¥¸®±â ½¬¿î ºÎºÐ)
-¿©·¯ °´Ã¼¸¦ µ¶¸³ÀûÀ¸·Î ¿òÁ÷ÀÌ°Ô ÇÏ·Á¸é ÀÌ ÆÐÅÏÀ» ¹Ýµå½Ã ±â¾ïÇØ¾ß ÇÕ´Ï´Ù.
+2. OpenGL í•µì‹¬ ì•”ê¸°ì‚¬í•­ (ê·¸ë¦¬ê¸° ê¸°ìˆ )
+ê°€. ê·¸ë¦¬ê¸° ê¸°ë³¸ (glBegin / glEnd)
+glBegin(MODE); / glEnd();: ëª¨ë“  ê·¸ë¦¬ê¸°ì˜ ì‹œìž‘ê³¼ ë. MODEë¥¼ ìžŠìœ¼ë©´ ì•ˆ ë©ë‹ˆë‹¤.
+GL_LINES: ì„  ê·¸ë¦¬ê¸° (ì  2ê°œì”©)
+GL_TRIANGLES: ì‚¼ê°í˜• ê·¸ë¦¬ê¸° (ì  3ê°œì”©)
+GL_QUADS: ì‚¬ê°í˜• ê·¸ë¦¬ê¸° (ì  4ê°œì”©)
+GL_TRIANGLE_FAN: ì±„ì›Œì§„ ì› ê·¸ë¦¬ê¸° (ì¤‘ì‹¬ì  1ê°œ + ë‚˜ë¨¸ì§€ ì ë“¤)
+glVertex2f(x, y);: 2D ì •ì (ì )ì„ ì°ëŠ” í•¨ìˆ˜. glBegin/glEnd ì•ˆì—ì„œë§Œ ì˜ë¯¸ê°€ ìžˆìŠµë‹ˆë‹¤.
+glColor3f(r, g, b);: ìƒ‰ìƒì„ ì§€ì •í•˜ëŠ” í•¨ìˆ˜ (0.0 ~ 1.0 ì‚¬ì´ì˜ float ê°’). glVertex ì „ì— í˜¸ì¶œí•´ì•¼ í•´ë‹¹ ì •ì ì— ìƒ‰ì´ ì ìš©ë©ë‹ˆë‹¤.
+glLineWidth(ë‘ê»˜);: ì„ ì˜ ë‘ê»˜ë¥¼ ì§€ì •í•©ë‹ˆë‹¤.
+ë‚˜. ì¢Œí‘œ ë³€í™˜ (ê°€ìž¥ í—·ê°ˆë¦¬ê¸° ì‰¬ìš´ ë¶€ë¶„)
+ì—¬ëŸ¬ ê°ì²´ë¥¼ ë…ë¦½ì ìœ¼ë¡œ ì›€ì§ì´ê²Œ í•˜ë ¤ë©´ ì´ íŒ¨í„´ì„ ë°˜ë“œì‹œ ê¸°ì–µí•´ì•¼ í•©ë‹ˆë‹¤.
 
 C
 
-glPushMatrix(); // ÇöÀç ÁÂÇ¥°è »óÅÂ ÀúÀå (¡Ú¡Ú¡Ú¡Ú¡Ú)
+glPushMatrix(); // í˜„ìž¬ ì¢Œí‘œê³„ ìƒíƒœ ì €ìž¥ (â˜…â˜…â˜…â˜…â˜…)
 {
-    // ÀÌ ºí·Ï ¾ÈÀÇ º¯È¯Àº ÇöÀç °´Ã¼¿¡¸¸ Àû¿ëµÊ
-    glTranslatef(x, y, 0.0f);                      // ¿øÇÏ´Â À§Ä¡·Î ÁÂÇ¥°è ÀÌµ¿
-    glRotatef(angle_in_degrees, 0.0f, 0.0f, 1.0f); // ZÃà ±âÁØÀ¸·Î È¸Àü (¡Ú¡ÚÁÖÀÇ: °¢µµ(degree) »ç¿ë¡Ú¡Ú)
-    glScalef(sx, sy, 1.0f);                        // Å©±â Á¶Àý
+    // ì´ ë¸”ë¡ ì•ˆì˜ ë³€í™˜ì€ í˜„ìž¬ ê°ì²´ì—ë§Œ ì ìš©ë¨
+    glTranslatef(x, y, 0.0f);                      // ì›í•˜ëŠ” ìœ„ì¹˜ë¡œ ì¢Œí‘œê³„ ì´ë™
+    glRotatef(angle_in_degrees, 0.0f, 0.0f, 1.0f); // Zì¶• ê¸°ì¤€ìœ¼ë¡œ íšŒì „ (â˜…â˜…ì£¼ì˜: ê°ë„(degree) ì‚¬ìš©â˜…â˜…)
+    glScalef(sx, sy, 1.0f);                        // í¬ê¸° ì¡°ì ˆ
 
-    // ¿©±â¿¡ °´Ã¼ ±×¸®±â ÄÚµå (¿¹: draw_circle)
+    // ì—¬ê¸°ì— ê°ì²´ ê·¸ë¦¬ê¸° ì½”ë“œ (ì˜ˆ: draw_circle)
 }
-glPopMatrix(); // ÀúÀåÇß´ø ÁÂÇ¥°è »óÅÂ·Î º¹¿ø (¡Ú¡Ú¡Ú¡Ú¡Ú)
-glPushMatrix()¿Í glPopMatrix()´Â ½ÖÀ¸·Î »ç¿ëÇØ¼­ ´Ù¸¥ ±×¸²¿¡ ¿µÇâÀÌ °¡Áö ¾Êµµ·Ï °Ý¸®ÇÏ´Â ¿ªÇÒÀ» ÇÕ´Ï´Ù.
-glRotatef´Â ¶óµð¾È(radian)ÀÌ ¾Æ´Ñ °¢µµ(degree)¸¦ »ç¿ëÇÕ´Ï´Ù. ¸¸¾à PI¸¦ ÀÌ¿ëÇØ ¶óµð¾ÈÀ¸·Î °¢µµ¸¦ °è»êÇß´Ù¸é * (180.0f / PI)¸¦ °öÇØ¼­ º¯È¯ÇØÁà¾ß ÇÕ´Ï´Ù.
-´Ù. ÁÂÇ¥°è ¼³Á¤
-glOrtho(left, right, bottom, top, near, far);: 2D ·»´õ¸µÀ» À§ÇÑ ÁÂÇ¥°è¸¦ ¸¸µì´Ï´Ù. glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);À¸·Î ¼³Á¤ÇÏ¸é Ã¢ÀÇ ¿ÞÂÊ ³¡ÀÌ -1, ¿À¸¥ÂÊ ³¡ÀÌ 1ÀÌ µË´Ï´Ù.
-3. C¾ð¾î ¹× ¼öÇÐ ÇÙ½É
-°¡. ±¸Á¶Ã¼ (struct)
-µµÇüÀÇ ¼Ó¼º(À§Ä¡, È¸Àü, Å©±â)À» ¹­¾î¼­ °ü¸®ÇÏ´Â µ¥ ¸Å¿ì À¯¿ëÇÕ´Ï´Ù. Transform ±¸Á¶Ã¼´Â ²À ±â¾ïÇØµÎ¼¼¿ä.
+glPopMatrix(); // ì €ìž¥í–ˆë˜ ì¢Œí‘œê³„ ìƒíƒœë¡œ ë³µì› (â˜…â˜…â˜…â˜…â˜…)
+glPushMatrix()ì™€ glPopMatrix()ëŠ” ìŒìœ¼ë¡œ ì‚¬ìš©í•´ì„œ ë‹¤ë¥¸ ê·¸ë¦¼ì— ì˜í–¥ì´ ê°€ì§€ ì•Šë„ë¡ ê²©ë¦¬í•˜ëŠ” ì—­í• ì„ í•©ë‹ˆë‹¤.
+glRotatefëŠ” ë¼ë””ì•ˆ(radian)ì´ ì•„ë‹Œ ê°ë„(degree)ë¥¼ ì‚¬ìš©í•©ë‹ˆë‹¤. ë§Œì•½ PIë¥¼ ì´ìš©í•´ ë¼ë””ì•ˆìœ¼ë¡œ ê°ë„ë¥¼ ê³„ì‚°í–ˆë‹¤ë©´ * (180.0f / PI)ë¥¼ ê³±í•´ì„œ ë³€í™˜í•´ì¤˜ì•¼ í•©ë‹ˆë‹¤.
+ë‹¤. ì¢Œí‘œê³„ ì„¤ì •
+glOrtho(left, right, bottom, top, near, far);: 2D ë Œë”ë§ì„ ìœ„í•œ ì¢Œí‘œê³„ë¥¼ ë§Œë“­ë‹ˆë‹¤. glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);ìœ¼ë¡œ ì„¤ì •í•˜ë©´ ì°½ì˜ ì™¼ìª½ ëì´ -1, ì˜¤ë¥¸ìª½ ëì´ 1ì´ ë©ë‹ˆë‹¤.
+3. Cì–¸ì–´ ë° ìˆ˜í•™ í•µì‹¬
+ê°€. êµ¬ì¡°ì²´ (struct)
+ë„í˜•ì˜ ì†ì„±(ìœ„ì¹˜, íšŒì „, í¬ê¸°)ì„ ë¬¶ì–´ì„œ ê´€ë¦¬í•˜ëŠ” ë° ë§¤ìš° ìœ ìš©í•©ë‹ˆë‹¤. Transform êµ¬ì¡°ì²´ëŠ” ê¼­ ê¸°ì–µí•´ë‘ì„¸ìš”.
 C
 
 typedef struct { float x, y; } Vec2;
 typedef struct { Vec2 position; float rotation; Vec2 scale; } Transform;
-typedef struct { Transform transform; /* Ãß°¡ Á¤º¸ *//* } Circle;
-ÇÔ¼ö¿¡ ±¸Á¶Ã¼¸¦ ³Ñ±æ ¶§´Â Æ÷ÀÎÅÍ(*)¸¦ »ç¿ëÇÏ°í, ¸â¹ö¿¡ Á¢±ÙÇÒ ¶§´Â È­»ìÇ¥ ¿¬»êÀÚ(->)¸¦ »ç¿ëÇÕ´Ï´Ù. (my_circle->transform.position.x)
-³ª.¿ø ±×¸®±â(»ï°¢ÇÔ¼ö)
-¿øÀ» ±×¸®´Â ÄÚµå´Â ½ÃÇè¿¡ ³ª¿Ã È®·üÀÌ ¸Å¿ì ³ô½À´Ï´Ù. for ·çÇÁ¿Í »ï°¢ÇÔ¼ö °ø½ÄÀ» ¿Ü¿ì¼¼¿ä.
+typedef struct { Transform transform; /* ì¶”ê°€ ì •ë³´ *//* } Circle;
+í•¨ìˆ˜ì— êµ¬ì¡°ì²´ë¥¼ ë„˜ê¸¸ ë•ŒëŠ” í¬ì¸í„°(*)ë¥¼ ì‚¬ìš©í•˜ê³ , ë©¤ë²„ì— ì ‘ê·¼í•  ë•ŒëŠ” í™”ì‚´í‘œ ì—°ì‚°ìž(->)ë¥¼ ì‚¬ìš©í•©ë‹ˆë‹¤. (my_circle->transform.position.x)
+ë‚˜.ì› ê·¸ë¦¬ê¸°(ì‚¼ê°í•¨ìˆ˜)
+ì›ì„ ê·¸ë¦¬ëŠ” ì½”ë“œëŠ” ì‹œí—˜ì— ë‚˜ì˜¬ í™•ë¥ ì´ ë§¤ìš° ë†’ìŠµë‹ˆë‹¤. for ë£¨í”„ì™€ ì‚¼ê°í•¨ìˆ˜ ê³µì‹ì„ ì™¸ìš°ì„¸ìš”.
 
 C
 
-// draw_circle ÇÔ¼öÀÇ for ·çÇÁ
+// draw_circle í•¨ìˆ˜ì˜ for ë£¨í”„
 for (int i = 0; i <= segments; i++) {
-    float angle = 2.0f * PI * i / segments; // ÇöÀç °¢µµ (¶óµð¾È)
-    float x = r * cosf(angle);              // ¿øÀÇ ¹æÁ¤½Ä (xÁÂÇ¥)
-    float y = r * sinf(angle);              // ¿øÀÇ ¹æÁ¤½Ä (yÁÂÇ¥)
+    float angle = 2.0f * PI * i / segments; // í˜„ìž¬ ê°ë„ (ë¼ë””ì•ˆ)
+    float x = r * cosf(angle);              // ì›ì˜ ë°©ì •ì‹ (xì¢Œí‘œ)
+    float y = r * sinf(angle);              // ì›ì˜ ë°©ì •ì‹ (yì¢Œí‘œ)
     glVertex2f(cx + x, cy + y);
 }
-4. ½ÃÇè Àü·« : ¸ð¸¦ ¶§ ´ëÃ³¹ý(ÀÎÅÍ³Ý ¾øÀÌ!)
-±âº» °ñ°ÝºÎÅÍ ÀÛ¼º : ¾î¶² ¹®Á¦°¡ ³ª¿Íµµ main ÇÔ¼öÀÇ »À´ëºÎÅÍ ¸·Èû¾øÀÌ ÀÛ¼ºÇÏ°í ½ÃÀÛÇÏ¼¼¿ä.
-´Ü¼øÇÑ °ÍºÎÅÍ ½ÃÀÛ : º¹ÀâÇÑ µµÇüÀ» ¿ä±¸ÇÏ´õ¶óµµ, ¸ÕÀú È­¸é¿¡ ÀÛÀº »ç°¢ÇüÀÌ³ª »ï°¢Çü ÇÏ³ª¶óµµ ¶ç¿ì´Â °ÍÀ» ¸ñÇ¥·Î ÇÏ¼¼¿ä.ÀÏ´Ü ¹¹¶óµµ º¸ÀÌ¸é ½É¸®ÀûÀ¸·Î ¾ÈÁ¤µË´Ï´Ù.
-ÇÔ¼ö ÀÌ¸§ÀÌ³ª ÀÎÀÚ ¼ø¼­°¡ Çò°¥¸± ¶§ :
-¿Ïº®ÇÏÁö ¾Ê¾Æµµ ±¦Âú½À´Ï´Ù.glVertex2f¸¦ glVertex¶ó°í ¾²°Å³ª glfwCreateWindowÀÇ ÀÎÀÚ ¼ø¼­°¡ ¾à°£ Æ²·Áµµ, ÁÖ¼®À¸·Î ¹«¾ùÀ» ÇÏ·Á´ÂÁö ¸íÈ®È÷ ¼³¸íÇÏ¸é ºÎºÐ Á¡¼ö¸¦ ¹ÞÀ» ¼ö ÀÖ½À´Ï´Ù.
-¿¹ : // ¿©±â¿¡ ³Êºñ 800, ³ôÀÌ 600ÀÇ Ã¢À» »ý¼ºÇÏ·Á°í ÇÔ
-    ±×¸²À¸·Î ¸ÕÀú ¼³°è : º¹ÀâÇÑ Ä³¸¯ÅÍ³ª ½Ã°è µîÀ» ±×·Á¾ß ÇÑ´Ù¸é, ÄÚµå ÀÛ¼º Àü¿¡ ½ÃÇèÁö¿¡ °£´ÜÈ÷ ¾î¶² µµÇü(¿ø, »ç°¢Çü, ¼±)À¸·Î ±¸¼ºµÉÁö ±×¸²À» ±×·Áº¸°í ÁÂÇ¥¸¦ ´ë·«ÀûÀ¸·Î Á¤ÇÏ¸é ÄÚµùÀÌ ÈÎ¾À ½¬¿öÁý´Ï´Ù.
-    ÁÖ¼® Àû±Ø È°¿ë : ³»°¡ Áö±Ý ¹«¾ùÀ» ÇÏ°í ÀÖ´ÂÁö, ´ÙÀ½¿£ ¹«¾ùÀ» ÇÒ °ÍÀÎÁö ÁÖ¼®À¸·Î °è¼Ó ÀÛ¼ºÇÏ¸é¼­ »ý°¢ÀÇ Èå¸§À» Á¤¸®ÇÏ¼¼¿ä.Ã¤Á¡°ü¿¡°Ôµµ ÁÁÀº ÀÎ»óÀ» ÁÝ´Ï´Ù.
-    ¿ä¾à : ÃÖ¼ÒÇÑ ÀÌ°Í¸¸Àº!(Ä¡Æ® ½ÃÆ®)
-    ±¸ºÐ	ÇÔ¼ö¸í / °³³ä	¿ªÇÒ
-    °ñ°Ý	glfwInit->CreateWindow->MakeContext -> while ·çÇÁ->Terminate	ÇÁ·Î±×·¥ÀÇ »ý¸íÁÖ±â
-    ·çÇÁ	glClear->±×¸®±â->SwapBuffers->PollEvents	¸Å ÇÁ·¹ÀÓÀÇ ¼ø¼­
-    ±×¸®±â	glBegin(MODE) / glEnd()	µµÇü ±×¸®±âÀÇ ½ÃÀÛ°ú ³¡
-    Á¤Á¡	glVertex2f(x, y)	Á¡ Âï±â
-    »ö»ó	glColor3f(r, g, b)	»ö ÁöÁ¤(0.0~1.0)
-    º¯È¯	glPushMatrix() / glPopMatrix()	°´Ã¼ °£ µ¶¸³¼º º¸Àå
-    ÀÌµ¿	glTranslatef(x, y, z)	À§Ä¡ ÀÌµ¿
-    È¸Àü	glRotatef(angle_degrees, 0, 0, 1)	ZÃà È¸Àü(°¢µµ »ç¿ë!)
-    ¿ø	for ·çÇÁ + cosf(angle) / sinf(angle)	¿øÀÇ Á¤Á¡ °è»ê
-    ÁÂÇ¥°è	glOrtho(-1, 1, -1, 1, ...)	2D ºä ¼³Á¤
+4. ì‹œí—˜ ì „ëžµ : ëª¨ë¥¼ ë•Œ ëŒ€ì²˜ë²•(ì¸í„°ë„· ì—†ì´!)
+ê¸°ë³¸ ê³¨ê²©ë¶€í„° ìž‘ì„± : ì–´ë–¤ ë¬¸ì œê°€ ë‚˜ì™€ë„ main í•¨ìˆ˜ì˜ ë¼ˆëŒ€ë¶€í„° ë§‰íž˜ì—†ì´ ìž‘ì„±í•˜ê³  ì‹œìž‘í•˜ì„¸ìš”.
+ë‹¨ìˆœí•œ ê²ƒë¶€í„° ì‹œìž‘ : ë³µìž¡í•œ ë„í˜•ì„ ìš”êµ¬í•˜ë”ë¼ë„, ë¨¼ì € í™”ë©´ì— ìž‘ì€ ì‚¬ê°í˜•ì´ë‚˜ ì‚¼ê°í˜• í•˜ë‚˜ë¼ë„ ë„ìš°ëŠ” ê²ƒì„ ëª©í‘œë¡œ í•˜ì„¸ìš”.ì¼ë‹¨ ë­ë¼ë„ ë³´ì´ë©´ ì‹¬ë¦¬ì ìœ¼ë¡œ ì•ˆì •ë©ë‹ˆë‹¤.
+í•¨ìˆ˜ ì´ë¦„ì´ë‚˜ ì¸ìž ìˆœì„œê°€ í—·ê°ˆë¦´ ë•Œ :
+ì™„ë²½í•˜ì§€ ì•Šì•„ë„ ê´œì°®ìŠµë‹ˆë‹¤.glVertex2fë¥¼ glVertexë¼ê³  ì“°ê±°ë‚˜ glfwCreateWindowì˜ ì¸ìž ìˆœì„œê°€ ì•½ê°„ í‹€ë ¤ë„, ì£¼ì„ìœ¼ë¡œ ë¬´ì—‡ì„ í•˜ë ¤ëŠ”ì§€ ëª…í™•ížˆ ì„¤ëª…í•˜ë©´ ë¶€ë¶„ ì ìˆ˜ë¥¼ ë°›ì„ ìˆ˜ ìžˆìŠµë‹ˆë‹¤.
+ì˜ˆ : // ì—¬ê¸°ì— ë„ˆë¹„ 800, ë†’ì´ 600ì˜ ì°½ì„ ìƒì„±í•˜ë ¤ê³  í•¨
+    ê·¸ë¦¼ìœ¼ë¡œ ë¨¼ì € ì„¤ê³„ : ë³µìž¡í•œ ìºë¦­í„°ë‚˜ ì‹œê³„ ë“±ì„ ê·¸ë ¤ì•¼ í•œë‹¤ë©´, ì½”ë“œ ìž‘ì„± ì „ì— ì‹œí—˜ì§€ì— ê°„ë‹¨ížˆ ì–´ë–¤ ë„í˜•(ì›, ì‚¬ê°í˜•, ì„ )ìœ¼ë¡œ êµ¬ì„±ë ì§€ ê·¸ë¦¼ì„ ê·¸ë ¤ë³´ê³  ì¢Œí‘œë¥¼ ëŒ€ëžµì ìœ¼ë¡œ ì •í•˜ë©´ ì½”ë”©ì´ í›¨ì”¬ ì‰¬ì›Œì§‘ë‹ˆë‹¤.
+    ì£¼ì„ ì ê·¹ í™œìš© : ë‚´ê°€ ì§€ê¸ˆ ë¬´ì—‡ì„ í•˜ê³  ìžˆëŠ”ì§€, ë‹¤ìŒì—” ë¬´ì—‡ì„ í•  ê²ƒì¸ì§€ ì£¼ì„ìœ¼ë¡œ ê³„ì† ìž‘ì„±í•˜ë©´ì„œ ìƒê°ì˜ íë¦„ì„ ì •ë¦¬í•˜ì„¸ìš”.ì±„ì ê´€ì—ê²Œë„ ì¢‹ì€ ì¸ìƒì„ ì¤ë‹ˆë‹¤.
+    ìš”ì•½ : ìµœì†Œí•œ ì´ê²ƒë§Œì€!(ì¹˜íŠ¸ ì‹œíŠ¸)
+    êµ¬ë¶„	í•¨ìˆ˜ëª… / ê°œë…	ì—­í• 
+    ê³¨ê²©	glfwInit->CreateWindow->MakeContext -> while ë£¨í”„->Terminate	í”„ë¡œê·¸ëž¨ì˜ ìƒëª…ì£¼ê¸°
+    ë£¨í”„	glClear->ê·¸ë¦¬ê¸°->SwapBuffers->PollEvents	ë§¤ í”„ë ˆìž„ì˜ ìˆœì„œ
+    ê·¸ë¦¬ê¸°	glBegin(MODE) / glEnd()	ë„í˜• ê·¸ë¦¬ê¸°ì˜ ì‹œìž‘ê³¼ ë
+    ì •ì 	glVertex2f(x, y)	ì  ì°ê¸°
+    ìƒ‰ìƒ	glColor3f(r, g, b)	ìƒ‰ ì§€ì •(0.0~1.0)
+    ë³€í™˜	glPushMatrix() / glPopMatrix()	ê°ì²´ ê°„ ë…ë¦½ì„± ë³´ìž¥
+    ì´ë™	glTranslatef(x, y, z)	ìœ„ì¹˜ ì´ë™
+    íšŒì „	glRotatef(angle_degrees, 0, 0, 1)	Zì¶• íšŒì „(ê°ë„ ì‚¬ìš©!)
+    ì›	for ë£¨í”„ + cosf(angle) / sinf(angle)	ì›ì˜ ì •ì  ê³„ì‚°
+    ì¢Œí‘œê³„	glOrtho(-1, 1, -1, 1, ...)	2D ë·° ì„¤ì •
 
-    Sheets·Î ³»º¸³»±â
-    ÀÌ ³»¿ëµé¸¸ È®½ÇÈ÷ ¼÷ÁöÇÏ°í ÀÌÇØÇÏ¸é ÀÎÅÍ³Ý ¾øÀÌµµ ÃæºÐÈ÷ ÁÁÀº °á°ú¸¦ ¾òÀ¸½Ç ¼ö ÀÖÀ» °Ì´Ï´Ù.Çà¿îÀ» º÷´Ï´Ù!
+    Sheetsë¡œ ë‚´ë³´ë‚´ê¸°
+    ì´ ë‚´ìš©ë“¤ë§Œ í™•ì‹¤ížˆ ìˆ™ì§€í•˜ê³  ì´í•´í•˜ë©´ ì¸í„°ë„· ì—†ì´ë„ ì¶©ë¶„ížˆ ì¢‹ì€ ê²°ê³¼ë¥¼ ì–»ìœ¼ì‹¤ ìˆ˜ ìžˆì„ ê²ë‹ˆë‹¤.í–‰ìš´ì„ ë¹•ë‹ˆë‹¤!
 
     */
